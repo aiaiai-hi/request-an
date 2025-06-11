@@ -134,7 +134,7 @@ def process_data(df):
             'report_name': unique_row.get('report_name', ''),
             'current_stage': unique_row.get('current_stage', ''),
             'ts_from': latest_row['ts_from'].strftime('%d.%m.%Y') if pd.notna(latest_row['ts_from']) else '',
-            'analyst': unique_row.get('Analyst', ''),
+            'analyst': unique_row.get('analyst', ''),
             'request_owner': unique_row.get('request_owner', ''),
             'request_owner_ssp': unique_row.get('request_owner_ssp', '')
         })
