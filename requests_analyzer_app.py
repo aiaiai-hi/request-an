@@ -45,7 +45,7 @@ def main():
             
             if file_extension == 'csv':
                 # Чтение CSV файла
-                df = pd.read_csv(uploaded_file, encoding='utf-8')
+                df = pd.read_csv(uploaded_file, encoding='utf-8', skiprows=1)
             elif file_extension == 'xlsx':
                 # Чтение Excel файла
                 try:
