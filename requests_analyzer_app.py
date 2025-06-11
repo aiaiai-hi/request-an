@@ -49,11 +49,7 @@ def main():
             
             elif file_extension == 'xlsx':
             # Чтение Excel файла
-                try:
-                    df = pd.read_excel(uploaded_file)
-                except Exception as e:
-                    st.error(f"❌ Ошибка чтения Excel файла: {str(e)}. Попробуйте сохранить файл в формате CSV.")
-                    return
+                df = pd.read_excel(uploaded_file, engine='openpyxl', skiprows=1)
                 
             else:
                 st.error("❌ Неподдерживаемый формат файла!")
