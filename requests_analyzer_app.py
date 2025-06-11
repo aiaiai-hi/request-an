@@ -24,9 +24,9 @@ def main():
     st.subheader("📁 Загрузка файла для анализа")
     
     uploaded_file = st.file_uploader(
-        "Выберите CSV файл с данными о запросах",
-        type=['csv'],
-        help="Поддерживаются файлы в формате CSV"
+        "Выберите файл с данными о запросах",
+        type=['csv', 'xls', 'xlsx'],
+        help="Поддерживаются файлы в форматах CSV, XLS, XLSX"
     )
     
     col1, col2 = st.columns([1, 1])
@@ -40,8 +40,19 @@ def main():
     # Обработка загрузки файла
     if load_button and uploaded_file:
         try:
-            # Чтение CSV файла
-            df = pd.read_csv(uploaded_file, encoding='utf-8')
+            # Определяем тип файла и читаем соответствующим образом
+            file_extension = uploaded_file.name.split('.')[-1].lower()
+            
+            if file_extension == 'csv':
+                # Чтение CSV файла
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
+            elif file_extension in ['xls', 'xlsx']:
+                # Чтение Excel файла
+                df = pd.read_excel(uploaded_file, engine='openpyxl' if file_extension == 'xlsx' else None)
+            else:
+                st.error("❌ Неподдерживаемый формат файла!")
+                return
+            
             # Удаляем полностью пустые строки
             df = df.dropna(how='all')
             # Удаляем строки где business_id пустой
