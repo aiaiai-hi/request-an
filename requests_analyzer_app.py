@@ -233,7 +233,7 @@ def display_results(df):
     if len(filtered_df) > 0:
         # Настройка отображения столбцов
         column_config = {
-            'business_id': st.column_config.NumberColumn('Business ID', format='%d'),
+            'business_id': st.column_config.NumberColumn('business_id', format='%d'),
             'created_at': st.column_config.TextColumn('Дата создания'),
             'дней_в_работе': st.column_config.NumberColumn('Дней в работе', format='%d'),
             'form_type_report': st.column_config.TextColumn('Тип формы'),
