@@ -43,17 +43,18 @@ def main():
             # Определяем тип файла и читаем соответствующим образом
             file_extension = uploaded_file.name.split('.')[-1].lower()
             
-            if file_extension == 'csv':
+            if file_extension == '.csv':
                 # Чтение CSV файла
                 df = pd.read_csv(uploaded_file, encoding='utf-8', skiprows=1)
+                return df
             
-            elif file_extension == 'xlsx':
+            elif file_extension == '.xlsx':
             # Чтение Excel файла
-                df = pd.read_excel(uploaded_file, engine='openpyxl', skiprows=1)
+                df = pd.read_excel(uploaded_file)
                 
             else:
                 st.error("❌ Неподдерживаемый формат файла!")
-                return
+                return df
             
             # Удаляем полностью пустые строки
             df = df.dropna(how='all')
