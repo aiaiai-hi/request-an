@@ -62,7 +62,7 @@ def main():
             # Удаляем строки где business_id пустой
             if 'business_id' in df.columns:
                 df = df.dropna(subset=['business_id'])
-                else:
+            else:
                 st.error("❌ В файле отсутствует столбец 'business_id'")
                 return
             
