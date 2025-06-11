@@ -3,24 +3,49 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import io
+from workalendar.europe import Russia
 
 def calculate_business_days(start_date, end_date):
     """Вычисляет количество рабочих дней между двумя датами по российскому производственному календарю"""
     if pd.isna(start_date) or pd.isna(end_date):
         return 0
     
-    # Получаем российские праздники
-    ru_holidays = holidays.Russia(years=range(start_date.year, end_date.year + 1))
+    # Создаем экземпляр российского календаря
+    cal = Russia()
     
-    # Подсчитываем рабочие дни
-    business_days = 0
-    current_date = start_date
+    # Используем встроенный метод для подсчета рабочих дней
+    business_days = cal.get_working_days_delta(start_date, end_date)
     
-    while current_date <= end_date:
-        # Проверяем, является ли день рабочим (не выходной и не праздник)
-        if current_date.weekday() < 5 and current_date not in ru_holidays:
-            business_days += 1
-        current_date += timedelta(days=1)
+    return business_days
+
+# 3. УСТАНОВКА БИБЛИОТЕКИ
+# Перед запуском приложения выполните в терминале:
+# pip install workalendar
+
+# 4. ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА (опционально)
+# Если нужно добавить обработку ошибок, замените функцию на:
+def calculate_business_days(start_date, end_date):
+    """Вычисляет количество рабочих дней между двумя датами по российскому производственному календарю"""
+    if pd.isna(start_date) or pd.isna(end_date):
+        return 0
+    
+    try:
+        # Создаем экземпляр российского календаря
+        cal = Russia()
+        
+        # Конвертируем в datetime.date если это Timestamp
+        if hasattr(start_date, 'date'):
+            start_date = start_date.date()
+        if hasattr(end_date, 'date'):
+            end_date = end_date.date()
+        
+        # Используем встроенный метод для подсчета рабочих дней
+        business_days = cal.get_working_days_delta(start_date, end_date)
+        
+        return business_days
+    except Exception as e:
+        # В случае ошибки возвращаем 0
+        return 0
     
 def main():
     st.set_page_config(
