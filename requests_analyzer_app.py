@@ -4,7 +4,6 @@ import numpy as np
 from datetime import datetime, timedelta
 import io
 
-
 def main():
     st.set_page_config(
         page_title="Анализатор запросов",
@@ -26,8 +25,8 @@ def main():
     
     uploaded_file = st.file_uploader(
         "Выберите файл с данными о запросах",
-        type=['csv', 'xls', 'xlsx'],
-        help="Поддерживаются файлы в форматах CSV, XLS, XLSX"
+        type=['csv', 'xlsx'],
+        help="Поддерживаются файлы в форматах CSV, XLSX"
     )
     
     col1, col2 = st.columns([1, 1])
@@ -47,9 +46,13 @@ def main():
             if file_extension == 'csv':
                 # Чтение CSV файла
                 df = pd.read_csv(uploaded_file, encoding='utf-8')
-            elif file_extension in ['xls', 'xlsx']:
+            elif file_extension == 'xlsx':
                 # Чтение Excel файла
-                df = pd.read_excel(uploaded_file, engine='openpyxl' if file_extension == 'xlsx' else None)
+                try:
+                    df = pd.read_excel(uploaded_file, engine='openpyxl')
+                except ImportError:
+                    st.error("❌ Для работы с Excel файлами необходимо установить дополнительные библиотеки. Пожалуйста, используйте CSV формат.")
+                    return
             else:
                 st.error("❌ Неподдерживаемый формат файла!")
                 return
