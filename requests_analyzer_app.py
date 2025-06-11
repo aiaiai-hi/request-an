@@ -3,7 +3,26 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import io
+import holidays
 
+def calculate_business_days(start_date, end_date):
+    """Вычисляет количество рабочих дней между двумя датами по российскому производственному календарю"""
+    if pd.isna(start_date) or pd.isna(end_date):
+        return 0
+    
+    # Получаем российские праздники
+    ru_holidays = holidays.Russia(years=range(start_date.year, end_date.year + 1))
+    
+    # Подсчитываем рабочие дни
+    business_days = 0
+    current_date = start_date
+    
+    while current_date <= end_date:
+        # Проверяем, является ли день рабочим (не выходной и не праздник)
+        if current_date.weekday() < 5 and current_date not in ru_holidays:
+            business_days += 1
+        current_date += timedelta(days=1)
+    
 def main():
     st.set_page_config(
         page_title="Анализатор запросов",
@@ -29,16 +48,8 @@ def main():
         help="Поддерживаются файлы в форматах CSV, XLSX"
     )
     
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        load_button = st.button("📤 Загрузить файл", use_container_width=True)
-    
-    with col2:
-        analyze_button = st.button("🔍 Проанализировать", use_container_width=True, disabled=uploaded_file is None)
-    
-    # Обработка загрузки файла
-    if load_button and uploaded_file:
+    # Автоматическая загрузка и анализ файла
+    if uploaded_file is not None:
         try:
             # Определяем тип файла и читаем соответствующим образом
             file_extension = uploaded_file.name.split('.')[-1].lower()
@@ -66,18 +77,17 @@ def main():
             st.session_state.original_data = df
             st.success(f"✅ Файл успешно загружен! Найдено {len(df)} записей.")
             
-        except Exception as e:
-            st.error(f"❌ Ошибка при загрузке файла: {str(e)}")
-    
-    # Обработка анализа данных
-    if analyze_button and st.session_state.original_data is not None:
-        try:
-            processed_data = process_data(st.session_state.original_data)
-            st.session_state.processed_data = processed_data
-            st.success("✅ Данные успешно обработаны!")
+            # Автоматически обрабатываем данные
+            try:
+                processed_data = process_data(df)
+                st.session_state.processed_data = processed_data
+                st.success("✅ Данные успешно обработаны!")
+                
+            except Exception as e:
+                st.error(f"❌ Ошибка при обработке данных: {str(e)}")
             
         except Exception as e:
-            st.error(f"❌ Ошибка при обработке данных: {str(e)}")
+            st.error(f"❌ Ошибка при загрузке файла: {str(e)}")
     
     # Отображение результатов
     if st.session_state.processed_data is not None:
@@ -119,22 +129,22 @@ def process_data(df):
         # Находим соответствующую последнюю запись для расчета дней
         latest_row = latest_records[latest_records['business_id'] == business_id].iloc[0]
         
-        # Рассчитываем дни в работе
+        # Рассчитываем дни в работе (рабочие дни)
         if pd.notna(latest_row['ts_from']):
-            days_in_work = (datetime.now() - latest_row['ts_from']).days
+            days_in_work = calculate_business_days(latest_row['ts_from'], datetime.now())
         else:
             days_in_work = 0
         
         result_data.append({
             'business_id': int(business_id),
             'created_at': unique_row['created_at'].strftime('%d.%m.%Y') if pd.notna(unique_row['created_at']) else '',
-            'дней_в_работе': days_in_work,
+            'рабочих_дней_в_работе': days_in_work,
             'form_type_report': unique_row.get('form_type_report', ''),
             'report_code': unique_row.get('report_code', ''),
             'report_name': unique_row.get('report_name', ''),
             'current_stage': unique_row.get('current_stage', ''),
             'ts_from': latest_row['ts_from'].strftime('%d.%m.%Y') if pd.notna(latest_row['ts_from']) else '',
-            'analyst': unique_row.get('analyst', ''),
+            'analyst': unique_row.get('Analyst', ''),
             'request_owner': unique_row.get('request_owner', ''),
             'request_owner_ssp': unique_row.get('request_owner_ssp', '')
         })
@@ -170,7 +180,7 @@ def display_results(df):
     
     with col1:
         form_types = ['Все'] + sorted(df['form_type_report'].dropna().unique().tolist())
-        selected_form_type = st.selectbox("Тип формы отчета:", form_types)
+        selected_form_type = st.selectbox("Тип отчета:", form_types)
         
         analysts = ['Все'] + sorted(df['analyst'].dropna().unique().tolist())
         selected_analyst = st.selectbox("Аналитик:", analysts)
@@ -186,10 +196,10 @@ def display_results(df):
         owner_ssps = ['Все'] + sorted(df['request_owner_ssp'].dropna().unique().tolist())
         selected_owner_ssp = st.selectbox("Владелец ССП:", owner_ssps)
         
-        min_days = st.number_input("Мин. дней в работе:", min_value=0, value=0)
+        min_days = st.number_input("Мин. рабочих дней:", min_value=0, value=0)
     
     with col4:
-        max_days = st.number_input("Макс. дней в работе:", min_value=0, value=1000)
+        max_days = st.number_input("Макс. рабочих дней:", min_value=0, value=1000)
         
         # Кнопка сброса фильтров
         if st.button("🔄 Сбросить фильтры"):
@@ -212,8 +222,8 @@ def display_results(df):
         filtered_df = filtered_df[filtered_df['request_owner_ssp'] == selected_owner_ssp]
     
     filtered_df = filtered_df[
-        (filtered_df['дней_в_работе'] >= min_days) & 
-        (filtered_df['дней_в_работе'] <= max_days)
+        (filtered_df['рабочих_дней_в_работе'] >= min_days) & 
+        (filtered_df['рабочих_дней_в_работе'] <= max_days)
     ]
     
     # Статистика
@@ -224,16 +234,16 @@ def display_results(df):
         st.metric("🔍 После фильтрации", len(filtered_df))
     with col3:
         if len(filtered_df) > 0:
-            avg_days = filtered_df['дней_в_работе'].mean()
-            st.metric("📅 Среднее дней в работе", f"{avg_days:.1f}")
+            avg_days = filtered_df['рабочих_дней_в_работе'].mean()
+            st.metric("📅 Среднее рабочих дней", f"{avg_days:.1f}")
         else:
-            st.metric("📅 Среднее дней в работе", "0")
+            st.metric("📅 Среднее рабочих дней", "0")
     with col4:
         if len(filtered_df) > 0:
-            max_days_value = filtered_df['дней_в_работе'].max()
-            st.metric("⏰ Максимум дней", max_days_value)
+            max_days_value = filtered_df['рабочих_дней_в_работе'].max()
+            st.metric("⏰ Максимум рабочих дней", max_days_value)
         else:
-            st.metric("⏰ Максимум дней", "0")
+            st.metric("⏰ Максимум рабочих дней", "0")
     
     # Отображение таблицы
     st.subheader("📋 Таблица данных")
@@ -243,8 +253,8 @@ def display_results(df):
         column_config = {
             'business_id': st.column_config.NumberColumn('business_id', format='%d'),
             'created_at': st.column_config.TextColumn('Дата создания'),
-            'дней_в_работе': st.column_config.NumberColumn('Дней в работе', format='%d'),
-            'form_type_report': st.column_config.TextColumn('Тип формы'),
+            'рабочих_дней_в_работе': st.column_config.NumberColumn('Рабочих дней в работе', format='%d'),
+            'form_type_report': st.column_config.TextColumn('Тип отчета'),
             'report_code': st.column_config.TextColumn('Код отчета'),
             'report_name': st.column_config.TextColumn('Название отчета'),
             'current_stage': st.column_config.TextColumn('Текущая стадия'),
@@ -261,15 +271,15 @@ def display_results(df):
             hide_index=True
         )
         
-        # Кнопка экспорта в Excel
-        if st.button("📥 Скачать в Excel", use_container_width=True):
-            excel_data = create_excel_download(filtered_df)
-            st.download_button(
-                label="💾 Загрузить Excel файл",
-                data=excel_data,
-                file_name=f"requests_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+        # Кнопка экспорта в Excel с автоматической загрузкой
+        excel_data = create_excel_download(filtered_df)
+        st.download_button(
+            label="📥 Скачать в файл",
+            data=excel_data,
+            file_name=f"requests_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
     else:
         st.warning("⚠️ Нет данных для отображения. Попробуйте изменить фильтры.")
 
