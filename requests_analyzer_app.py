@@ -46,13 +46,15 @@ def main():
             if file_extension == 'csv':
                 # Чтение CSV файла
                 df = pd.read_csv(uploaded_file, encoding='utf-8', skiprows=1)
+            
             elif file_extension == 'xlsx':
-                # Чтение Excel файла
+            # Чтение Excel файла
                 try:
-                    df = pd.read_excel(uploaded_file, engine='openpyxl')
-                except ImportError:
-                    st.error("❌ Для работы с Excel файлами необходимо установить дополнительные библиотеки. Пожалуйста, используйте CSV формат.")
+                    df = pd.read_excel(uploaded_file)
+                except Exception as e:
+                    st.error(f"❌ Ошибка чтения Excel файла: {str(e)}. Попробуйте сохранить файл в формате CSV.")
                     return
+                
             else:
                 st.error("❌ Неподдерживаемый формат файла!")
                 return
