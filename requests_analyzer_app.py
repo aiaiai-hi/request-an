@@ -60,7 +60,11 @@ def main():
             # Удаляем полностью пустые строки
             df = df.dropna(how='all')
             # Удаляем строки где business_id пустой
-            df = df.dropna(subset=['business_id'])
+            if 'business_id' in df.columns:
+                df = df.dropna(subset=['business_id'])
+                else:
+                st.error("❌ В файле отсутствует столбец 'business_id'")
+                return
             
             st.session_state.original_data = df
             st.success(f"✅ Файл успешно загружен! Найдено {len(df)} записей.")
