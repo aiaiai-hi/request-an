@@ -46,15 +46,15 @@ def main():
             if file_extension == '.csv':
                 # Чтение CSV файла
                 df = pd.read_csv(uploaded_file, encoding='utf-8', skiprows=1)
-                return df
+                return
             
             elif file_extension == '.xlsx':
             # Чтение Excel файла
                 df = pd.read_excel(uploaded_file)
-                
+                return
             else:
                 st.error("❌ Неподдерживаемый формат файла!")
-                return df
+                return
             
             # Удаляем полностью пустые строки
             df = df.dropna(how='all')
