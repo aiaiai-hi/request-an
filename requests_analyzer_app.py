@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import io
-import openpyxl
+
 
 def main():
     st.set_page_config(
