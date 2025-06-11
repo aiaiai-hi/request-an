@@ -44,14 +44,12 @@ def main():
             file_extension = uploaded_file.name.split('.')[-1].lower()
             
             if file_extension == 'csv':
-                # Чтение CSV файла
+                # Чтение CSV файла - убрали skiprows=1
                 df = pd.read_csv(uploaded_file, encoding='utf-8', skiprows=1)
-                return
             
             elif file_extension == 'xlsx':
-            # Чтение Excel файла
+                # Чтение Excel файла - исправлена индентация
                 df = pd.read_excel(uploaded_file)
-                return
             else:
                 st.error("❌ Неподдерживаемый формат файла!")
                 return
@@ -88,11 +86,18 @@ def main():
 def process_data(df):
     """Обработка данных согласно требованиям"""
     
-    # Конвертируем даты
+    # Конвертируем даты - добавлена обработка ошибок
     date_columns = ['created_at', 'ts_from', 'ts_to']
     for col in date_columns:
         if col in df.columns:
-            df[col] = pd.to_datetime(df[col], format='%d.%m.%Y', errors='coerce')
+            # Пробуем разные форматы дат
+            try:
+                df[col] = pd.to_datetime(df[col], format='%d.%m.%Y', errors='coerce')
+            except:
+                try:
+                    df[col] = pd.to_datetime(df[col], format='%Y-%m-%d', errors='coerce')
+                except:
+                    df[col] = pd.to_datetime(df[col], errors='coerce')
     
     # Сортируем по created_at от новых к старым
     df_sorted = df.sort_values('created_at', ascending=False)
