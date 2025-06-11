@@ -4,3 +4,4 @@ openpyxl
 xlsxwriter
 workalendar
 datetime
+numpy
